@@ -12,4 +12,4 @@ Domains are considered spoofable if any of the following conditions are met:
 
 Install the requirements with `$ pip install requirements.txt`
 
-Run with `$ python3 spoofable.py [domain]`
+Run with `$ python spoofable.py [domain]`
