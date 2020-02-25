@@ -10,6 +10,6 @@ Domains are considered spoofable if any of the following conditions are met:
 
 # Usage
 
-Install the requirements with `$ pip install requirements.txt`
+Install the requirements with `$ pip install -r requirements.txt`
 
 Run with `$ python spoofable.py [domain]`

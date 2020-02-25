@@ -13,6 +13,7 @@
 import dns.resolver
 import re
 import sys
+from colorama import Fore, init, Style
 
 def getSPF(resolver, domain):
 	spfRegex = re.compile("^\"(v=spf1).*\"$")
@@ -23,7 +24,6 @@ def getSPF(resolver, domain):
 				if spfRegex.match(line.to_text()):
 					return str(line)
 	except dns.resolver.NoAnswer:
-		print("No SPF record found for " + domain)
 		return False
 
 def getDMARC(resolver, domain):
@@ -34,47 +34,52 @@ def getDMARC(resolver, domain):
 			for line in item.items:
 				if spfRegex.match(line.to_text()):
 					return str(line)
-	except dns.resolver.NoAnswer:
-		print("No DMARC record found for " + domain)
+	except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN) as e:
 		return False
 
 def main():
 	domain = sys.argv[1]
 	resolver = dns.resolver.Resolver()
-	spfRecord = getSPF(resolver, domain).strip('"')
+	spfRecord = getSPF(resolver, domain)
+	if spfRecord:
+		spfRecord = spfRecord.strip('"')
 	spoofable = False
 	if spfRecord:
-		print("[X] SPF record found: ")
+		print("[" + Fore.BLUE + "X" + Style.RESET_ALL + "] SPF record found: ")
 		print(spfRecord)
 		if "~all" not in spfRecord and "-all" not in spfRecord:
-			print("[+] " + domain + " does not contain \"-all\" or \"~all\" in the SPF record.")
+			print("[" + Fore.GREEN + "+" + Style.RESET_ALL + "] " + domain + " does not contain \"-all\" or \"~all\" in the SPF record.")
 			spoofable = True
 	else:
-		print("[+] SPF record not found for " + domain)
+		print("[" + Fore.GREEN + "+" + Style.RESET_ALL + "] SPF record not found for " + domain)
 		spoofable = True
-	dmarcRecord = getDMARC(resolver, domain).strip('"')
+	dmarcRecord = getDMARC(resolver, domain)
 	dmarcTagRegex = r";\s*p=([^;]*)\s*;"
-	dmarcTagMatch = re.search(dmarcTagRegex, dmarcRecord)
+	dmarcTagMatch = None
+	if dmarcRecord:
+		dmarcRecord = dmarcRecord.strip('"')
+		dmarcTagMatch = re.search(dmarcTagRegex, dmarcRecord)
 	dmarcTag = None 
 	if dmarcTagMatch:
 		dmarcTag = dmarcTagMatch.group(1)
 	if dmarcRecord:
-		print("[X] DMARC record found: ")
+		print("[" + Fore.BLUE + "X" + Style.RESET_ALL + "] DMARC record found: ")
 		print(dmarcRecord)
 		if not dmarcTagMatch:
-			print("[+] " + domain + " does not have a policy set in the DMARC record.")
+			print("[" + Fore.GREEN + "+" + Style.RESET_ALL + "] " + domain + " does not have a policy set in the DMARC record.")
 			spoofable = True
 		elif dmarcTag == "none":
-			print("[+] " + domain + " has policy set to \"none\" in the DMARC record.")
+			print("[" + Fore.GREEN + "+" + Style.RESET_ALL + "] " + domain + " has policy set to \"none\" in the DMARC record.")
 			spoofable = True
 	else:
-		print("[+] DMARC record not found for " + domain)
+		print("[" + Fore.GREEN + "+" + Style.RESET_ALL + "] DMARC record not found for " + domain)
 		spoofable = True
 	if spoofable:
-		print(domain + " is spoofable.")
+		print("\n" + Fore.GREEN + domain + " is spoofable.")
 	else:
-		print(domain + " is NOT spoofable.")
+		print("\n" + Fore.RED + domain + " is NOT spoofable.")
 
 if __name__== "__main__":
+	init(autoreset=True)
 	main()
 	
