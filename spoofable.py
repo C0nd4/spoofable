@@ -41,10 +41,9 @@ def main():
 	domain = sys.argv[1]
 	resolver = dns.resolver.Resolver()
 	spfRecord = getSPF(resolver, domain)
-	if spfRecord:
-		spfRecord = spfRecord.strip('"')
 	spoofable = False
 	if spfRecord:
+		spfRecord = spfRecord.strip('"')
 		print("[" + Fore.BLUE + "X" + Style.RESET_ALL + "] SPF record found: ")
 		print(spfRecord)
 		if "~all" not in spfRecord and "-all" not in spfRecord:
