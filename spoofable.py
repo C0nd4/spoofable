@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 # Author: Brandon Rossi
 # 2/24/2020
@@ -41,29 +41,39 @@ def getDMARC(resolver, domain):
 def main():
 	domain = sys.argv[1]
 	resolver = dns.resolver.Resolver()
-	spfRecord = getSPF(resolver, domain)
+	spfRecord = getSPF(resolver, domain).strip('"')
+	spoofable = False
 	if spfRecord:
+		print("[X] SPF record found: ")
+		print(spfRecord)
 		if "~all" not in spfRecord and "-all" not in spfRecord:
-			print(domain + " is spoofable, it does not contain \"-all\" or \"~all\" in the SPF record.")
-			exit(0)
+			print("[+] " + domain + " does not contain \"-all\" or \"~all\" in the SPF record.")
+			spoofable = True
 	else:
-		print(domain + " is spoofable, it does not have an SPF record.")
-		exit(0)
-	dmarcRecord = getDMARC(resolver, domain)
-	dmarcTagRegex = r";\s*p=(.[^;]*)\s*;"
+		print("[+] SPF record not found for " + domain)
+		spoofable = True
+	dmarcRecord = getDMARC(resolver, domain).strip('"')
+	dmarcTagRegex = r";\s*p=([^;]*)\s*;"
 	dmarcTagMatch = re.search(dmarcTagRegex, dmarcRecord)
-	dmarcTag = dmarcTagMatch.group(1)
+	dmarcTag = None 
+	if dmarcTagMatch:
+		dmarcTag = dmarcTagMatch.group(1)
 	if dmarcRecord:
+		print("[X] DMARC record found: ")
+		print(dmarcRecord)
 		if not dmarcTagMatch:
-			print(domain + " is spoofable, it does not have a policy set in the DMARC record.")
-			exit(0)
+			print("[+] " + domain + " does not have a policy set in the DMARC record.")
+			spoofable = True
 		elif dmarcTag == "none":
-			print(domain + " is spoofable, it has policy set to \"none\" in the DMARC record.")
-			exit(0)
+			print("[+] " + domain + " has policy set to \"none\" in the DMARC record.")
+			spoofable = True
 	else:
-		print(domain + " is spoofable, it does not have a DMARC record.")
-		exit(0)
-	print(domain + " is not spoofable.")
+		print("[+] DMARC record not found for " + domain)
+		spoofable = True
+	if spoofable:
+		print(domain + " is spoofable.")
+	else:
+		print(domain + " is NOT spoofable.")
 
 if __name__== "__main__":
 	main()
