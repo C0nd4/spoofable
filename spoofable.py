@@ -18,7 +18,7 @@ from colorama import Fore, init, Style
 def getSPF(resolver, domain):
 	spfRegex = re.compile("^\"(v=spf1).*\"$")
 	try:
-		answer = resolver.query(domain, 'txt')
+		answer = resolver.resolve(domain, 'txt')
 		for item in answer.response.answer:
 			for line in item.items:
 				if spfRegex.match(line.to_text()):
@@ -29,7 +29,7 @@ def getSPF(resolver, domain):
 def getDMARC(resolver, domain):
 	spfRegex = re.compile("^\"(v=DMARC).*\"$")
 	try:
-		answer = resolver.query("_dmarc." + domain, 'txt')
+		answer = resolver.resolve("_dmarc." + domain, 'txt')
 		for item in answer.response.answer:
 			for line in item.items:
 				if spfRegex.match(line.to_text()):
